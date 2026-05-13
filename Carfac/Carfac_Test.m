@@ -98,7 +98,7 @@ sp2 = subplot(2,1,2);
 plot_carfac_map(t_stim, CFs_plot, BM_plot, sp2);
 title('CARFAC Basilar Membrane Output')
 ylabel('CF (kHz)')
-caxis([-1 5])
+caxis([-1 2])
 xlim(xl)
 
 %% NAPS plot
@@ -122,7 +122,7 @@ sp2 = subplot(2,1,2);
 plot_carfac_map(t_stim, CFs_plot, naps_plot, sp2);
 title('CARFAC NAPS Output')
 ylabel('CF (kHz)')
-caxis([-1 5])
+caxis([-1 2])
 xlim(xl)
 
 
