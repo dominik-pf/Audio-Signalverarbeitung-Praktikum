@@ -1,0 +1,41 @@
+% // clang-format off
+% Copyright 2012 The CARFAC Authors. All Rights Reserved.
+% Author Richard F. Lyon
+%
+% This file is part of an implementation of Lyon's cochlear model:
+% "Cascade of Asymmetric Resonators with Fast-Acting Compression"
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+function CF = CARFAC_Close_AGC_Loop(CF)
+% function CF = CARFAC_Close_AGC_Loop(CF)
+
+% fastest decimated rate determines interp needed:
+decim1 = CF.AGC_params.decimation(1);
+
+for ear = 1:CF.n_ears
+  % Set the deltas to be applied to g and zB on next CAR_Step.
+  % If decim1 = 1 (non-decimating), the delta goes all the way;
+  % if decim1 > 1, it ramps 1/decim1 of the way on each step.
+  undamping = 1 - CF.ears(ear).AGC_state.AGC_memory(:, 1); % stage 1 result
+  % degrade the OHC active undamping if the ear is less than healthy:
+  undamping = undamping .* CF.ears(ear).CAR_coeffs.OHC_health;
+  % Update the target stage gain for the new damping:
+  new_g = CARFAC_Stage_g(CF.ears(ear).CAR_coeffs, undamping);
+  % set the deltas needed to get to the new damping:
+  CF.ears(ear).CAR_state.dzB_memory = ...
+    (CF.ears(ear).CAR_coeffs.zr_coeffs .* undamping - ...
+    CF.ears(ear).CAR_state.zB_memory) / decim1;
+  CF.ears(ear).CAR_state.dg_memory = ...
+    (new_g - CF.ears(ear).CAR_state.g_memory) / decim1;
+end

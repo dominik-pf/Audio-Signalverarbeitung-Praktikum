@@ -1,0 +1,155 @@
+clear; close;
+scriptFolder = fileparts(mfilename('fullpath'));
+modelFolder = fullfile(scriptFolder, 'Model_matlab');
+addpath(genpath(modelFolder));
+hubPath = fileparts(scriptFolder);
+addpath(genpath(hubPath));
+
+
+%% Select input
+nr = 0; % select input by changing nr
+
+if nr==0
+    % create a custom input with different frequencies
+    Fs_stim = 100000;
+    t_stim = [0:1/Fs_stim:1]';
+    stim = zeros(size(t_stim));
+
+    ix1 = t_stim < 0.3;
+    stim(ix1) = stim(ix1) + sin(2*pi*200*t_stim(ix1));
+    ix2 = t_stim > 0.2 & t_stim < 0.5;
+    stim(ix2) = stim(ix2) + sin(2*pi*4000*t_stim(ix2));
+    ix3 = t_stim > 0.4 & t_stim < 0.8;
+    stim(ix3) = stim(ix3) + sin(2*pi*1200*t_stim(ix3));
+    ix4 = t_stim > 0.8 & t_stim < 1;
+    stim(ix4) = stim(ix4) + sin(2*pi*500*t_stim(ix4));
+
+elseif nr==1
+    [stim, Fs_stim] = audioread('long_test.wav');
+    % only use a segment of the audio
+    max_dur = 1.5;   % seconds
+    N = min(length(stim), round(max_dur*Fs_stim));
+    stim = stim(1:N);
+    stim = stim(:);
+
+elseif nr==2
+    [stim, Fs_stim] = audioread('defineit.wav');
+end
+
+stimdb = 65; % speech level in dB SPL
+
+stim = stim/rms(stim)*20e-6*10^(stimdb/20);
+
+t_stim = (0:size(stim,1)-1)/Fs_stim;
+
+%% Rum Carfac Model
+ 
+CF = CARFAC_Design(1, Fs_stim);
+CF = CARFAC_Init(CF);
+
+[CF, decim_naps, naps, BM, ohc, agc] = CARFAC_Run(CF, stim);
+
+
+CFs = CF.pole_freqs(:);
+
+if size(BM,1) ~= length(t_stim)
+    BM = BM.';
+end
+
+if size(naps,1) ~= length(t_stim)
+    naps = naps.';
+end
+
+cf_mask = CFs >= 125 & CFs <= 20000;
+% chec number of CFs used in the model
+    % num_CFs = length(CF.pole_freqs);
+    % min_max_CF = [min(CF.pole_freqs), max(CF.pole_freqs)];
+    % 
+    % cf_hz = cf_all(cf_mask);
+    % 
+    % num_CFs_cut = length(cf_hz);
+    % min_max_CF_cut = [min(cf_hz), max(cf_hz)];
+
+CFs_plot = CFs(cf_mask);
+BM_plot = BM(:,cf_mask);
+naps_plot = naps(:,cf_mask);
+
+%%
+winlen = 256; % Window length for the spectrogram analyses
+
+%% BM plot
+figure;
+set(gcf,'renderer','painters');
+
+subplot(2,1,1);
+[s,f,t] = specgram(stim,winlen,Fs_stim,winlen,0.25*winlen);
+imagesc(t,f/1e3,20*log10(abs(s)/sum(hanning(winlen))*sqrt(2)/20e-6));
+axis xy; axis tight;
+hcb = colorbar;
+set(get(hcb,'ylabel'),'string','SPL')
+caxis([stimdb-80 stimdb])
+ylim([0 min([max(CFs_plot/1e3) Fs_stim/2e3])])
+xlabel('Time (s)');
+ylabel('Frequency (kHz)');
+title('Spectrogram')
+xl = xlim;
+
+sp2 = subplot(2,1,2);
+plot_carfac_map(t_stim, CFs_plot, BM_plot, sp2);
+title('CARFAC Basilar Membrane Output')
+ylabel('CF (kHz)')
+caxis([-1 5])
+xlim(xl)
+
+%% NAPS plot
+figure;
+set(gcf,'renderer','painters');
+
+subplot(2,1,1);
+[s,f,t] = specgram(stim,winlen,Fs_stim,winlen,0.25*winlen);
+imagesc(t,f/1e3,20*log10(abs(s)/sum(hanning(winlen))*sqrt(2)/20e-6));
+axis xy; axis tight;
+hcb = colorbar;
+set(get(hcb,'ylabel'),'string','SPL')
+caxis([stimdb-80 stimdb])
+ylim([0 min([max(CFs_plot/1e3) Fs_stim/2e3])])
+xlabel('Time (s)');
+ylabel('Frequency (kHz)');
+title('Spectrogram')
+xl = xlim;
+
+sp2 = subplot(2,1,2);
+plot_carfac_map(t_stim, CFs_plot, naps_plot, sp2);
+title('CARFAC NAPS Output')
+ylabel('CF (kHz)')
+caxis([-1 5])
+xlim(xl)
+
+
+function h = plot_carfac_map(t, CFs, data, hin)
+
+if nargin > 3
+    h = hin;
+else
+    h = axes;
+end
+
+axes(h)
+
+if size(data,1) ~= length(t)
+    data = data.';
+end
+
+imagesc(t, log10(CFs/1e3), data.')
+axis xy
+
+yticks = [0.125 0.5 2 8 16];
+set(gca,'YTick',log10(yticks))
+set(gca,'YTickLabel',yticks)
+
+xlabel('Time (s)')
+ylabel('CF (kHz)')
+hcb = colorbar;
+set(get(hcb,'ylabel'),'string','Amplitude')
+
+end
