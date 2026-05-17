@@ -95,8 +95,8 @@ figure;
 set(gcf,'renderer','painters');
 
 subplot(2,1,1);
-[s,f,t] = spectrogram(stim, nwin, noverlap, nfft, Fs_stim, "yaxis");
-imagesc(t,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
+[s,f,t_spec] = spectrogram(stim, nwin, noverlap, nfft, Fs_stim, "yaxis");
+imagesc(t_spec,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
 axis xy; axis tight;
 hcb = colorbar;
 set(get(hcb,'ylabel'),'string','SPL')
@@ -112,17 +112,17 @@ sp2 = subplot(2,1,2);
 plot_carfac_map(t_stim, CFs_plot, BM_plot, sp2);
 title('CARFAC Basilar Membrane Output')
 ylabel('CF (kHz)')
-caxis([-1 2])
+% caxis([-1 2])
 xlim(xl)
-ylim(log10([1 4]))
+% ylim(log10([1 4]))
 
 %% NAPS plot
 figure;
 set(gcf,'renderer','painters');
 
 subplot(2,1,1);
-[s,f,t] = spectrogram(stim, nwin, noverlap, nfft, Fs_stim, "yaxis");
-imagesc(t,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
+[s,f,t_spec] = spectrogram(stim, nwin, noverlap, nfft, Fs_stim, "yaxis");
+imagesc(t_spec,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
 axis xy; axis tight;
 hcb = colorbar;
 set(get(hcb,'ylabel'),'string','SPL')
@@ -138,9 +138,9 @@ sp2 = subplot(2,1,2);
 plot_carfac_map(t_stim, CFs_plot, naps_plot, sp2);
 title('CARFAC NAPS Output')
 ylabel('CF (kHz)')
-caxis([-1 2])
+% caxis([-1 2])
 xlim(xl)
-ylim(log10([1 4]))
+% ylim(log10([1 4]))
 
 
 %% up
@@ -185,8 +185,8 @@ figure;
 set(gcf,'renderer','painters');
 
 subplot(2,1,1);
-[s,f,t] = spectrogram(stim, nwin, noverlap, nfft, Fs_stim, "yaxis");
-imagesc(t,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
+[s,f,t_spec] = spectrogram(stim, nwin, noverlap, nfft, Fs_stim, "yaxis");
+imagesc(t_spec,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
 axis xy; axis tight;
 hcb = colorbar;
 set(get(hcb,'ylabel'),'string','SPL')
@@ -211,8 +211,8 @@ figure;
 set(gcf,'renderer','painters');
 
 subplot(2,1,1);
-[s,f,t] = spectrogram(stim, nwin, noverlap, nfft, Fs_stim, "yaxis");
-imagesc(t,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
+[s,f,t_spec] = spectrogram(stim, nwin, noverlap, nfft, Fs_stim, "yaxis");
+imagesc(t_spec,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
 axis xy; axis tight;
 hcb = colorbar;
 set(get(hcb,'ylabel'),'string','SPL')

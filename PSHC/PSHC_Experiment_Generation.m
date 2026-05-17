@@ -1,4 +1,4 @@
-function [downPSHC, upPSHC, fs, t] = PSHC_Experiment_Generation(envRates)
+function [downPSHC, upPSHC, fs, t, Frequ_range] = PSHC_Experiment_Generation(envRates)
 %% Parameters
 % Input
 %   envRates:  select a vector of Envelope Rates that you want to generate
@@ -9,20 +9,22 @@ t = 0:1/fs:dur-1/fs;
 rampDur = 0.005;          % 5 ms raised-cosine ramp
 
 f0 = 2;                  % Fundamental frequency
-Fc = [0.25 0.5 1 2 4 8 11.2];
+% Fc = [250 500 1000 2000 4000 8000 11200];
+Fc = 8000;
 
 downPSHC = struct();
 upPSHC = struct();
+Frequ_range = struct();
 
 for idx=1:length(Fc)
     for n=1:length(envRates)
-        ERBN = 24.7*(4.37*Fc(idx)+1);
+        ERBN = (24.7*(4.37*Fc(idx)/1000+1));
         
         fLow = max(0.1,Fc(idx) - ERBN);             % Bandpass lower cutoff
         fHigh = Fc(idx) + ERBN;            % Bandpass upper cutoff
         
         envRate = envRates(n);
-        k = sqrt(envRate/f0);
+        k = round( sqrt(envRate/f0) );
         
         %% Harmonic range covering the passband
         M = ceil(fLow / f0);
@@ -44,7 +46,8 @@ for idx=1:length(Fc)
         downPSHC_it = apply_ramp(downPSHC_it, fs, rampDur);
         upPSHC_it   = apply_ramp(upPSHC_it, fs, rampDur);
 
-        name = sprintf('Fc%d_env%d', Fc(idx)*1e3, envRate);
+        name = sprintf('Fc%d_env%d', Fc(idx), envRate);
+        Frequ_range.(name) = [fLow fHigh]; 
         downPSHC.(name) = downPSHC_it;  % Store down PSHC
         upPSHC.(name) = upPSHC_it;      % Store up PSHC
     end
