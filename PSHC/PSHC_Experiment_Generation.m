@@ -1,4 +1,4 @@
-function [downPSHC, upPSHC, fs, t, Frequ_range] = PSHC_Experiment_Generation(envRates)
+function [downPSHC, upPSHC, fs, t, Frequ_range] = PSHC_Experiment_Generation(envRates, Fc)
 %% Parameters
 % Input
 %   envRates:  select a vector of Envelope Rates that you want to generate
@@ -10,7 +10,7 @@ rampDur = 0.005;          % 5 ms raised-cosine ramp
 
 f0 = 2;                  % Fundamental frequency
 % Fc = [250 500 1000 2000 4000 8000 11200];
-Fc = 8000;
+% Fc = 8000;
 
 downPSHC = struct();
 upPSHC = struct();

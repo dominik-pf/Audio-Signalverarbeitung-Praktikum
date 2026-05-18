@@ -16,7 +16,7 @@ addpath(genpath(carfacPath));
  
 %% PSHC Generation
 if ~exist('downPSHC','var') || isempty(downPSHC)
-    [downPSHC, upPSHC, fs, t, Frequ_range] = PSHC_Experiment_Generation([20, 98, 200, 450, 500, 600, 800], 8000);
+    [downPSHC, upPSHC, fs, t, Frequ_range] = PSHC_Experiment_Generation([200, 450, 600, 800], [1000, 2000, 4000, 8000]);
 end
 all_combinations = fieldnames(downPSHC);
 
@@ -224,18 +224,13 @@ for combos=1:length(all_combinations)
     end
     
     
-    
-    difference = corr(naps_down(:), naps_up(:));
+    % Structural similarity (SSIM) index for measuring image quality
+    SSIM_score = ssim(naps_down, naps_up);
     
     tokens = regexp(test, 'Fc(\d+)_env(\d+)', 'tokens', 'once');
     FcField  = ['Fc'  tokens{1}];
     envField = ['env' tokens{2}];
     
-    UP_DOWN_diff.(FcField).(envField) = difference;
+    UP_DOWN_SSIM_score.(FcField).(envField) = SSIM_score;
 
 end
-
-%% compute differences
-diffMap = abs(BM_down - BM_up);
-figure
-imagesc(diffMap')
