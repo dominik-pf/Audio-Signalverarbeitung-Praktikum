@@ -17,27 +17,27 @@ upPSHC = struct();
 Frequ_range = struct();
 
 for idx=1:length(Fc)
-    for n=1:length(envRates)
-        ERBN = (24.7*(4.37*Fc(idx)/1000+1));
-        
-        fLow = max(0.1,Fc(idx) - ERBN);             % Bandpass lower cutoff
-        fHigh = Fc(idx) + ERBN;            % Bandpass upper cutoff
-        
-        envRate = envRates(n);
-        k = round( sqrt(envRate/f0) );
-        
-        %% Harmonic range covering the passband
-        M = ceil(fLow / f0);
-        N = floor(fHigh / f0);
-        harmonics = M:N;
+    ERBN = (24.7*(4.37*Fc(idx)/1000+1));
     
+    fLow = max(0.1,Fc(idx) - ERBN);         % Bandpass lower cutoff
+    fHigh = Fc(idx) + ERBN;                 % Bandpass upper cutoff
+
+    %% Harmonic range covering the passband
+    M = ceil(100 / f0);
+    N = floor(20000 / f0);
+    harmonics = M:N;
+
+    for n=1:length(envRates)
+        envRate = envRates(n);
+        k = round(sqrt(envRate/f0));
+
         %% Generate PSHCs
         % my code
         downPSHC_it = generate_pshc(t, f0, harmonics, k, "down");
         upPSHC_it   = generate_pshc(t, f0, harmonics, k, "up");
         
         %% Bandpass filter
-        [b,a] = butter(3, [fLow fHigh]/(fs/2), "bandpass"); % should be 6
+        [b,a] = butter(3, [fLow fHigh]/(fs/2), "bandpass"); % 6 as order=n*2 for bandpass
         
         downPSHC_it = filtfilt(b,a,downPSHC_it);
         upPSHC_it   = filtfilt(b,a,upPSHC_it);
@@ -50,5 +50,7 @@ for idx=1:length(Fc)
         Frequ_range.(name) = [fLow fHigh]; 
         downPSHC.(name) = downPSHC_it;  % Store down PSHC
         upPSHC.(name) = upPSHC_it;      % Store up PSHC
+
+        clear downPSHC_it upPSHC_it envRate k b a
     end
 end

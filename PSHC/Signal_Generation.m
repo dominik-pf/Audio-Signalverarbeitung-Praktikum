@@ -1,4 +1,4 @@
-clear; close all; clc;
+% clear; close all; clc;
 
 %% Parameters
 fs = 96000;              % Sampling rate
@@ -15,13 +15,13 @@ fHigh = 2540;            % Bandpass upper cutoff
 rampDur = 0.02;          % 20 ms raised-cosine ramp
 
 %% Choose one condition
-idx = 3;                 % 1 = 98 pps, 2 = 200 pps, 3 = 450 pps
+idx = 2;                 % 1 = 98 pps, 2 = 200 pps, 3 = 450 pps
 envRate = envRates(idx);
 k = kVals(idx);
 
 %% Harmonic range covering the passband
-M = ceil(250 / f0);
-N = floor(8000 / f0);
+M = ceil(100 / f0);
+N = floor(20000 / f0);
 harmonics = M:N;
 
 %% Generate PSHCs
