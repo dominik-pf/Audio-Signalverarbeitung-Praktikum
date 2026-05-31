@@ -1,4 +1,4 @@
-function [downPSHC, upPSHC, fs, t, Frequ_range] = PSHC_Experiment_Generation(envRates, Fc)
+function [downPSHC, upPSHC, fs, t, Frequ_range, envRates] = PSHC_Experiment_Generation(ks, Fc)
 %% Parameters
 % Input
 %   envRates:  select a vector of Envelope Rates that you want to generate
@@ -15,6 +15,7 @@ f0 = 2;                  % Fundamental frequency
 downPSHC = struct();
 upPSHC = struct();
 Frequ_range = struct();
+envRates = struct();
 
 for idx=1:length(Fc)
     ERBN = (24.7*(4.37*Fc(idx)/1000+1));
@@ -27,9 +28,9 @@ for idx=1:length(Fc)
     N = floor(20000 / f0);
     harmonics = M:N;
 
-    for n=1:length(envRates)
-        envRate = envRates(n);
-        k = round(sqrt(envRate/f0));
+    for n=1:length(ks)
+        k = ks(n);
+        envRate = k^2*f0;
 
         %% Generate PSHCs
         % my code
@@ -50,7 +51,32 @@ for idx=1:length(Fc)
         Frequ_range.(name) = [fLow fHigh]; 
         downPSHC.(name) = downPSHC_it;  % Store down PSHC
         upPSHC.(name) = upPSHC_it;      % Store up PSHC
+        envRates.(name) = envRate;      % Store envRate
+
+                                                                        % figure;
+                                                                        % 
+                                                                        % subplot(2,1,1)
+                                                                        % plot(t, downPSHC_it);
+                                                                        % title("Down-PSHC")
+                                                                        % % xlim([0 0.05])
+                                                                        % 
+                                                                        % subplot(2,1,2)
+                                                                        % plot(t, upPSHC_it);
+                                                                        % title("Up-PSHC")
+                                                                        % % xlim([0 0.05])
+
+                                                                        % downListen = downPSHC_it / max(abs(downPSHC_it));
+                                                                        % upListen   = upPSHC_it   / max(abs(upPSHC_it));
+                                                                        % 
+                                                                        % downListen = 0.5 * downListen;   % 50% volume
+                                                                        % upListen   = 0.5 * upListen;
+                                                                        % 
+                                                                        % sound(downListen, fs)
+                                                                        % pause(4)
+                                                                        % sound(upListen, fs)
+
 
         clear downPSHC_it upPSHC_it envRate k b a
+
     end
 end

@@ -35,9 +35,19 @@ downPSHC = filtfilt(b,a,downPSHC);
 upPSHC   = filtfilt(b,a,upPSHC);
 
 %% Apply 20-ms raised-cosine ramps
-% downPSHC = apply_ramp(downPSHC, fs, rampDur);
-% upPSHC   = apply_ramp(upPSHC, fs, rampDur);
+downPSHC = apply_ramp(downPSHC, fs, rampDur);
+upPSHC   = apply_ramp(upPSHC, fs, rampDur);
 
+%% listen to the audio
+downListen = downPSHC / max(abs(downPSHC));
+upListen   = upPSHC   / max(abs(upPSHC));
+
+downListen = 0.5 * downListen;   % 50% volume
+upListen   = 0.5 * upListen;
+
+sound(downListen, fs)
+pause(3)
+sound(upListen, fs)
 
 %% Plot waveforms and Hilbert envelopes
 figure
@@ -54,15 +64,17 @@ figure;
 
 subplot(2,1,1)
 plot(t, downPSHC); hold on;
-plot(t, abs(hilbert(downPSHC)), 'r');
+% plot(t, abs(hilbert(downPSHC)), 'r');
 title("Down-PSHC")
-xlim([0 0.05])
+hold off
+% xlim([0 0.05])
 
 subplot(2,1,2)
 plot(t, upPSHC); hold on;
-plot(t, abs(hilbert(upPSHC)), 'r');
+% plot(t, abs(hilbert(upPSHC)), 'r');
 title("Up-PSHC")
-xlim([0 0.05])
+hold off
+% xlim([0 0.05])
 
 
 %% Spectrograms
@@ -77,40 +89,3 @@ subplot(2,1,2)
 spectrogram(upPSHC, 1024, 900, 2048, fs, "yaxis");
 title("Up-PSHC spectrogram")
 ylim([1.5 3])
-
-%% Create PSHC
-function x = generate_pshc(t, f0, harmonics, k, direction)
-
-    x = zeros(size(t));
-
-
-    for i = harmonics
-
-        j = mod(i, k) + 1;
-
-        if direction == "down"
-            rj = j;
-        elseif direction == "up"
-            rj = k - j + 1;
-        else
-            error("direction must be 'down' or 'up'")
-        end
-
-        phi = 2*pi*rj*i/(k^2);
-
-        x = x + sin(2*pi*f0*i*t + phi);
-    end
-end
-
-%% Ramp function
-function y = apply_ramp(x, fs, rampDur)
-
-    nRamp = round(rampDur * fs);
-    ramp = 0.5 - 0.5*cos(pi*(0:nRamp-1)/nRamp);
-
-    env = ones(size(x));
-    env(1:nRamp) = ramp;
-    env(end-nRamp+1:end) = fliplr(ramp);
-
-    y = x .* env;
-end

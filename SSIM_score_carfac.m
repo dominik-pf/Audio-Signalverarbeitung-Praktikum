@@ -68,17 +68,17 @@ for combos=1:length(all_combinations)
     CFs_down_plot = CFs_down(cf_down_mask);
     BM_down_plot = BM_down(:,cf_down_mask);
     naps_down_plot = naps_down(:,cf_down_mask);
-    
+    %%
     if plot_active
         %%
         nwin = 512;
         noverlap = 256;
         nfft = 2*1024;
-    
+
         %% BM plot
         figure;
         set(gcf,'renderer','painters');
-        
+
         subplot(2,1,1);
         [s,f,t_spec] = spectrogram(stim_down, nwin, noverlap, nfft, Fs_stim_down, "yaxis");
         imagesc(t_spec,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
@@ -92,7 +92,7 @@ for combos=1:length(all_combinations)
         title('Spectrogram - PSHC_down')
         xl = xlim;
         % ylim([fLow fHigh]*1e-3)
-        
+
         sp2 = subplot(2,1,2);
         plot_carfac_map(t_stim_down, CFs_down_plot, BM_down_plot, sp2);
         title('CARFAC Basilar Membrane Output - PSHC_down')
@@ -100,11 +100,11 @@ for combos=1:length(all_combinations)
         caxis([-1 2])
         xlim(xl)
         % ylim(log10([fLow fHigh]*1e-3))
-        
+
         %% NAPS plot
         figure;
         set(gcf,'renderer','painters');
-        
+
         subplot(2,1,1);
         [s,f,t_spec] = spectrogram(stim_down, nwin, noverlap, nfft, Fs_stim_down, "yaxis");
         imagesc(t_spec,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
@@ -118,7 +118,7 @@ for combos=1:length(all_combinations)
         title('Spectrogram - PSHC_down')
         xl = xlim;
         % ylim([fLow fHigh]*1e-3)
-        
+
         sp2 = subplot(2,1,2);
         plot_carfac_map(t_stim_down, CFs_down_plot, naps_down_plot, sp2);
         title('CARFAC NAPS Output - PSHC_down')
@@ -162,17 +162,17 @@ for combos=1:length(all_combinations)
     CFs_up_plot = CFs_up(cf_up_mask);
     BM_up_plot = BM_up(:,cf_up_mask);
     naps_up_plot = naps_up(:,cf_up_mask);
-        
+    %%
     if plot_active
         %%
         nwin = 512;
         noverlap = 256;
         nfft = 2*1024;
-        
+
         %% BM plot
         figure;
         set(gcf,'renderer','painters');
-        
+
         subplot(2,1,1);
         [s,f,t_spec] = spectrogram(stim_up, nwin, noverlap, nfft, Fs_stim_up, "yaxis");
         imagesc(t_spec,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
@@ -186,7 +186,7 @@ for combos=1:length(all_combinations)
         title('Spectrogram - PSHC_up')
         xl = xlim;
         % ylim([fLow fHigh]*1e-3)
-        
+
         sp2 = subplot(2,1,2);
         plot_carfac_map(t_stim_up, CFs_up_plot, BM_up_plot, sp2);
         title('CARFAC Basilar Membrane Output - PSHC_up')
@@ -194,11 +194,11 @@ for combos=1:length(all_combinations)
         caxis([-1 2])
         xlim(xl)
         % ylim(log10([fLow fHigh]*1e-3))
-        
+
         %% NAPS plot
         figure;
         set(gcf,'renderer','painters');
-        
+
         subplot(2,1,1);
         [s,f,t_spec] = spectrogram(stim_up, nwin, noverlap, nfft, Fs_stim_up, "yaxis");
         imagesc(t_spec,f/1e3,20*log10(abs(s)/sum(hanning(nwin))*sqrt(2)/20e-6));
@@ -212,7 +212,7 @@ for combos=1:length(all_combinations)
         title('Spectrogram - PSHC_up')
         xl = xlim;
         % ylim([fLow fHigh]*1e-3)
-        
+
         sp2 = subplot(2,1,2);
         plot_carfac_map(t_stim_up, CFs_up_plot, naps_up_plot, sp2);
         title('CARFAC NAPS Output - PSHC_up')
