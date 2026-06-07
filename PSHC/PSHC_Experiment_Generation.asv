@@ -1,0 +1,94 @@
+function [downPSHC, upPSHC, fs, t, Frequ_range, envRates] = PSHC_Experiment_Generation(ks, Fc)
+%% Parameters
+% Input
+%   envRates:  select a vector of Envelope Rates that you want to generate
+
+fs = 96000;              % Sampling rate
+dur = 1;                 % 1s
+t = 0:1/fs:dur-1/fs;
+rampDur = 0.01;          % 10 ms raised-cosine ramp
+
+f0 = 2;                  % Fundamental frequency
+% Fc = [250 500 1000 2000 4000 8000 11200];
+% Fc = 8000;
+
+downPSHC = struct();
+upPSHC = struct();
+Frequ_range = struct();
+envRates = struct();
+
+for idx=1:length(Fc)
+    ERBN = (24.7*(4.37*Fc(idx)/1000+1));
+    
+    fLow = max(0.1,Fc(idx) - ERBN);         % Bandpass lower cutoff
+    fHigh = Fc(idx) + ERBN;                 % Bandpass upper cutoff
+
+    %% Harmonic range covering the passband
+    M = ceil(100 / f0);
+    N = floor(20000 / f0);
+    harmonics = M:N;
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % For Testing Purposes We Calculate Num_ks k values so envRate lies between
+    % f0 and Fc
+    Num_ks
+    kmax = floor(sqrt(Fc/f0));
+    ks = round(linspace(1,kmax,Num_ks));
+    ks = unique(ks);
+
+    for n=1:length(ks)
+        k = ks(n);
+        envRate = k^2*f0;
+        
+        if envRate>Fc
+            break;
+        end
+            
+        %% Generate PSHCs
+        % my code
+        downPSHC_it = generate_pshc(t, f0, harmonics, k, "down");
+        upPSHC_it   = generate_pshc(t, f0, harmonics, k, "up");
+        
+        %% Bandpass filter
+        [b,a] = butter(3, [fLow fHigh]/(fs/2), "bandpass"); % 6 as order=n*2 for bandpass
+        
+        downPSHC_it = filtfilt(b,a,downPSHC_it);
+        upPSHC_it   = filtfilt(b,a,upPSHC_it);
+        
+        % Apply 20-ms raised-cosine ramps
+        downPSHC_it = apply_ramp(downPSHC_it, fs, rampDur);
+        upPSHC_it   = apply_ramp(upPSHC_it, fs, rampDur);
+
+        name = sprintf('Fc%d_env%d', Fc(idx), envRate);
+        Frequ_range.(name) = [fLow fHigh]; 
+        downPSHC.(name) = downPSHC_it;  % Store down PSHC
+        upPSHC.(name) = upPSHC_it;      % Store up PSHC
+        envRates.(name) = envRate;      % Store envRate
+
+                                                                        % figure;
+                                                                        % 
+                                                                        % subplot(2,1,1)
+                                                                        % plot(t, downPSHC_it);
+                                                                        % title("Down-PSHC")
+                                                                        % % xlim([0 0.05])
+                                                                        % 
+                                                                        % subplot(2,1,2)
+                                                                        % plot(t, upPSHC_it);
+                                                                        % title("Up-PSHC")
+                                                                        % % xlim([0 0.05])
+
+                                                                        % downListen = downPSHC_it / max(abs(downPSHC_it));
+                                                                        % upListen   = upPSHC_it   / max(abs(upPSHC_it));
+                                                                        % 
+                                                                        % downListen = 0.5 * downListen;   % 50% volume
+                                                                        % upListen   = 0.5 * upListen;
+                                                                        % 
+                                                                        % sound(downListen, fs)
+                                                                        % pause(4)
+                                                                        % sound(upListen, fs)
+
+
+        clear downPSHC_it upPSHC_it envRate k b a
+
+    end
+end

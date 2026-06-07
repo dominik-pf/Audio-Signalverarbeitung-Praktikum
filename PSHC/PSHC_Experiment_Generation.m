@@ -4,9 +4,9 @@ function [downPSHC, upPSHC, fs, t, Frequ_range, envRates] = PSHC_Experiment_Gene
 %   envRates:  select a vector of Envelope Rates that you want to generate
 
 fs = 96000;              % Sampling rate
-dur = 2;                 % 500 ms
+dur = 1;                 % 1s
 t = 0:1/fs:dur-1/fs;
-rampDur = 0.005;          % 5 ms raised-cosine ramp
+rampDur = 0.01;          % 10 ms raised-cosine ramp
 
 f0 = 2;                  % Fundamental frequency
 % Fc = [250 500 1000 2000 4000 8000 11200];
@@ -28,10 +28,22 @@ for idx=1:length(Fc)
     N = floor(20000 / f0);
     harmonics = M:N;
 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % For Testing Purposes We Calculate Num_ks k values so envRate lies between
+    % f0 and Fc
+    Num_ks = 8;
+    kmax = floor(sqrt(Fc(idx)/f0));
+    ks = round(linspace(1,kmax,Num_ks));
+    ks = unique(ks);
+
     for n=1:length(ks)
         k = ks(n);
         envRate = k^2*f0;
-
+        
+        if envRate>Fc
+            break;
+        end
+            
         %% Generate PSHCs
         % my code
         downPSHC_it = generate_pshc(t, f0, harmonics, k, "down");
