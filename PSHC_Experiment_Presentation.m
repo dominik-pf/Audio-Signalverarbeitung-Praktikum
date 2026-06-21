@@ -410,9 +410,3 @@ hold off
 % hold off
 % 
 % toc
-% 
-% 
-% save('UP_DOWN_NSIM_score_local_min');
-% save('UP_DOWN_bestLag_ms');
-% save('UP_DOWN_corr_local_min');
-% save('UP_DOWN_corr_bestLag_ms');
