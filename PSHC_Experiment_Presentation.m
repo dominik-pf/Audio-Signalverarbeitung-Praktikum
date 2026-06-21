@@ -18,13 +18,13 @@ addpath(genpath(carfacPath));
  
 %% PSHC Generation
 if ~exist('downPSHC','var') || isempty(downPSHC)
-    [downPSHC, upPSHC, fs, t, Frequ_range, envRates] = PSHC_Experiment_Generation_Presentation(1, [250, 500, 1000]);%, 2000, 4000, 8000, 11200]);
+    [downPSHC, upPSHC, fs, t, Frequ_range, envRates] = PSHC_Experiment_Generation_Presentation(1, [250, 500, 1000, 2000, 4000, 8000, 11200]);
 end
 all_combinations = fieldnames(downPSHC);
 
 %% ::::::::::::::::::::::::::::::::::::::::::
 % test = all_combinations{11};
-%  ::::::::::::::::::::::::::::::::::::::::::
+%  :::::::::::::::::::::::::::::::::::::::::: 
 
 %% ::::::::::::::::::::::::::::::::::::::::::
 plot_active = true; % plotting on/off
@@ -119,33 +119,42 @@ combos
     envField = ['env' tokens{2}];
 
     %% local analysis
+    
     % hard cut frequency band
-        % Fc = str2double(tokens{1});
-        % CFs = CFs_up;
-        % [~, ch0] = min(abs(CFs - Fc));
-        % idx = max(1,ch0-15) : min(length(CFs),ch0+15);
-        % 
-        % R_up   = naps_up(:,idx)';
-        % R_down = naps_down(:,idx)';
-        % CF_local = CFs(idx);
-
-    % channel weighting around Fc
         Fc = str2double(tokens{1});
-        CFs = CFs_up(:);
-        
-        sigma_oct = 0.25; % bandwidth in octaves, tune this
-        dist_oct = log2(CFs / Fc);
-        
-        w_cf = exp(-0.5 * (dist_oct / sigma_oct).^2);
-        w_cf = w_cf(:)';
-        
-        R_down = naps_down .* w_cf;
-        R_up   = naps_up   .* w_cf;
-        R_down = R_down';
-        R_up = R_up';
+        CFs = CFs_up;
+        [~, ch0] = min(abs(CFs - Fc));
+        idx = max(1,ch0-15) : min(length(CFs),ch0+15);
+
+        R_up   = naps_up(:,idx)';
+        R_down = naps_down(:,idx)';
+        CF_local = CFs(idx);
+
+    % % channel weighting around Fc
+    %     Fc = str2double(tokens{1});
+    %     CFs = CFs_up(:);
+    % 
+    %     sigma_oct = 0.55; % bandwidth in octaves, tune this
+    %     dist_oct = log2(CFs / Fc);
+    % 
+    %     w_cf = exp(-0.5 * (dist_oct / sigma_oct).^2);
+    %     w_cf = w_cf(:)';
+    % 
+    %     R_down = naps_down .* w_cf;
+    %     R_up   = naps_up   .* w_cf;
+    %     R_down = R_down';
+    %     R_up = R_up';
 
     % Structural similarity (SSIM) index for measuring image quality
-    SSIM_score_local = ssim(R_down, R_up);
+    [SSIM_score_local, SSIM_diff_map_local] = ssim(R_down, R_up);
+    
+                                figure
+                                imagesc(t_stim_down, CFs_up, SSIM_diff_map_local)
+                                axis xy
+                                xlabel('Time (s)')
+                                ylabel('CF (Hz)')
+                                title(sprintf('SSIM difference map: %s', test))
+                                colorbar
     
     UP_DOWN_SSIM_score_local.(FcField).(envField) = 1- SSIM_score_local;
 
@@ -158,57 +167,82 @@ combos
         B_L = B_L.';
     end
     
-    [nsim_val_local, ~] = nsim_paper(A_L, B_L);
+    [nsim_val_local, nsim_map_local] = nsim_paper(A_L, B_L);
     UP_DOWN_NSIM_score_local.(FcField).(envField) = 1- nsim_val_local;
 
-    %% Analysis between input signals
-        nwin = 512;
-        noverlap = 256;
-        nfft = 2*1024;
+                                figure
+                                imagesc(t_stim_down, CFs_up, nsim_map_local)
+                                axis xy
+                                xlabel('Time (s)')
+                                ylabel('CF (Hz)')
+                                title(sprintf('NSIM difference map: %s', test))
+                                colorbar
 
-        [s_down,f_down,t_spec] = spectrogram(stim_down, nwin, noverlap, nfft, Fs_stim_down, "yaxis");
-        [s_up,f_up,~] = spectrogram(stim_up, nwin, noverlap, nfft, Fs_stim_up, "yaxis");
-        s_down = abs(s_down);
-        s_up = abs(s_up);
-
-        % hard cur frequency band
-            % mask = (f_down >= CF_local(end)) & (f_down <= CF_local(1));
-            % s_down = s_down(mask,:);
-            % f_down = f_down(mask);
-            % s_up = s_up(mask,:);
-            % f_up = f_up(mask);
-
-        % frequency weighting around Fc
-            dist_oct_spec = log2(f_down / Fc);
-            w_f = exp(-0.5 * (dist_oct_spec / sigma_oct).^2);
-            
-            s_down = s_down .* w_f;
-            s_up   = s_up   .* w_f;
-                    
-        % Structural similarity (SSIM) index for measuring image quality
-        SSIM_score_input = ssim(s_down, s_up);
- 
-        UP_DOWN_SSIM_score_input.(FcField).(envField) = 1- SSIM_score_input;
-    
-        % NSIM 
-        A_input = s_down;
-        B_input = s_up;
-        
-        % make sure both are time x CF
-        if size(A_input,1) ~= size(B_input,1)
-            B_input = B_input.';
-        end
-        
-        [nsim_val_input, ~] = nsim_paper(A_input, B_input);
-        UP_DOWN_NSIM_score_input.(FcField).(envField) = 1- nsim_val_input;
+    % %% Analysis between input signals
+    %     nwin = 512;
+    %     noverlap = 256;
+    %     nfft = 2*1024;
+    % 
+    %     [s_down,f_down,t_spec] = spectrogram(stim_down, nwin, noverlap, nfft, Fs_stim_down, "yaxis");
+    %     [s_up,f_up,~] = spectrogram(stim_up, nwin, noverlap, nfft, Fs_stim_up, "yaxis");
+    %     s_down = abs(s_down);
+    %     s_up = abs(s_up);
+    % 
+    %     % hard cur frequency band
+    %         % mask = (f_down >= CF_local(end)) & (f_down <= CF_local(1));
+    %         % s_down = s_down(mask,:);
+    %         % f_down = f_down(mask);
+    %         % s_up = s_up(mask,:);
+    %         % f_up = f_up(mask);
+    % 
+    %     % frequency weighting around Fc
+    %         dist_oct_spec = log2(f_down / Fc);
+    %         w_f = exp(-0.5 * (dist_oct_spec / sigma_oct).^2);
+    % 
+    %         s_down = s_down .* w_f;
+    %         s_up   = s_up   .* w_f;
+    % 
+    %     % Structural similarity (SSIM) index for measuring image quality
+    %     [SSIM_score_input, SSIM_diff_map_in] = ssim(s_down, s_up);
+    % 
+    %                             % figure
+    %                             % imagesc(t_stim_down, CFs_up, SSIM_diff_map_in)
+    %                             % axis xy
+    %                             % xlabel('Time (s)')
+    %                             % ylabel('CF (Hz)')
+    %                             % title(sprintf('SSIM difference map: %s', test))
+    %                             % colorbar
+    % 
+    %     UP_DOWN_SSIM_score_input.(FcField).(envField) = 1- SSIM_score_input;
+    % 
+    %     % NSIM 
+    %     A_input = s_down;
+    %     B_input = s_up;
+    % 
+    %     % make sure both are time x CF
+    %     if size(A_input,1) ~= size(B_input,1)
+    %         B_input = B_input.';
+    %     end
+    % 
+    %     [nsim_val_input, nsim_map_input] = nsim_paper(A_input, B_input);
+    %     UP_DOWN_NSIM_score_input.(FcField).(envField) = 1- nsim_val_input;
+    % 
+    %                             % figure
+    %                             % imagesc(t_stim_down, CFs_up, nsim_map_input)
+    %                             % axis xy
+    %                             % xlabel('Time (s)')
+    %                             % ylabel('CF (Hz)')
+    %                             % title(sprintf('NSIM difference map input: %s', test))
+    %                             % colorbar
 
 
         % %% Test Alignment
-        % maxLag_ms = 5;
+        % maxLag_ms = 10;
         % maxLag = round(maxLag_ms/1000 * fs);
         % 
         % lags = -maxLag:maxLag;
         % diffVals = zeros(size(lags));
+        % corrVals = zeros(size(lags));
         % 
         % for k = 1:numel(lags)
         %     lag = lags(k);
@@ -223,19 +257,29 @@ combos
         %         A = R_down;
         %         B = R_up;
         %     end
-        % 
         %     [nsim_val, ~] = nsim_paper(A, B);
         %     diffVals(k) = 1 - nsim_val;
+        % 
+        %     corrVals(k) = corr(A(:), B(:), 'Rows', 'complete');
         % end
         % 
         % [bestDiff, bestIdx] = min(diffVals);
         % bestLag_samples = lags(bestIdx);
         % bestLag_ms = bestLag_samples / fs * 1000;
         % 
+        % [bestCorr, bestCorrIdx] = max(corrVals);
+        % bestCorrLag_samples = lags(bestCorrIdx);
+        % bestCorrLag_ms = bestCorrLag_samples / fs * 1000;
+        % 
         % UP_DOWN_NSIM_score_local_min.(FcField).(envField) = bestDiff;
         % UP_DOWN_bestLag_ms.(FcField).(envField) = bestLag_ms;
+        % 
+        % UP_DOWN_corr_local_max.(FcField).(envField) = bestCorr;
+        % UP_DOWN_corr_bestLag_ms.(FcField).(envField) = bestCorrLag_ms;
+        
 end
 
+toc
 
 
 %% plot score over envRate NSIM_LOCAL
@@ -259,16 +303,34 @@ for f = 1:numel(fcFields)
     [envRate, idx] = sort(envRate);
     diffScore = diffScore(idx);
 
-    plot(envRate, diffScore, '-o', 'LineWidth', 2, ...
-         'DisplayName', fcName)
-end
 
+    gprMdl = fitrgp(envRate, diffScore);
+    envFine = linspace(min(envRate),max(envRate),500)';
+    diffFit = predict(gprMdl,envFine);
+
+    UP_DOWN_NSIM_fitting.(fcName).envFine = envFine;
+    UP_DOWN_NSIM_fitting.(fcName).diffFit = diffFit;
+
+    % fitobj = fit(envRate, diffScore, 'smoothingspline', 'SmoothingParam',1);
+    % envFine = linspace(min(envRate), max(envRate), 500);
+    % diffFit = feval(fitobj, envFine);
+
+    plot(envRate, diffScore, '-o', 'LineWidth', 2, 'DisplayName', fcName)
+    hold on
+    plot(envFine,diffFit,'r','LineWidth',2)
+
+end
+legend('Measurements','Smoothing spline')
 xlabel('Envelope rate')
 ylabel('Differnece score')
 title('Differnece score over envelope rate NSIM LOCAL')
 legend('Location','best')
 grid on
 hold off
+
+
+
+
 
 
 %% plot score over envRate SSIM_LOCAL
@@ -292,8 +354,21 @@ for f = 1:numel(fcFields)
     [envRate, idx] = sort(envRate);
     diffScore = diffScore(idx);
 
-    plot(envRate, diffScore, '-o', 'LineWidth', 2, ...
-         'DisplayName', fcName)
+    
+    gprMdl = fitrgp(envRate, diffScore);
+    envFine = linspace(min(envRate),max(envRate),500)';
+    diffFit = predict(gprMdl,envFine);
+
+    % fitobj = fit(envRate, diffScore, 'smoothingspline');
+    % envFine = linspace(min(envRate), max(envRate), 500);
+    % diffFit = feval(fitobj, envFine);
+
+    UP_DOWN_SSIM_fitting.(fcName).envFine = envFine;
+    UP_DOWN_SSIM_fitting.(fcName).diffFit = diffFit;
+
+    plot(envRate, diffScore, '-o', 'LineWidth', 2, 'DisplayName', fcName)
+    hold on
+    plot(envFine,diffFit,'r','LineWidth',2)
 end
 
 xlabel('Envelope rate')
@@ -324,8 +399,7 @@ hold off
 %     [envRate, idx] = sort(envRate);
 %     diffScore = diffScore(idx);
 % 
-%     plot(envRate, diffScore, '-o', 'LineWidth', 2, ...
-%          'DisplayName', fcName)
+%     plot(envRate, diffScore, '-o', 'LineWidth', 2, 'DisplayName', fcName)
 % end
 % 
 % xlabel('Envelope rate')
@@ -334,5 +408,11 @@ hold off
 % legend('Location','best')
 % grid on
 % hold off
-
-toc
+% 
+% toc
+% 
+% 
+% save('UP_DOWN_NSIM_score_local_min');
+% save('UP_DOWN_bestLag_ms');
+% save('UP_DOWN_corr_local_min');
+% save('UP_DOWN_corr_bestLag_ms');
